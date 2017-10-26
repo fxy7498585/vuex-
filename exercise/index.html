@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<script type="text/javascript" src="../js/vue.js"></script>
+	<script type="text/javascript" src="../js/vuex-3.0.0.js"></script>
+	<script type="text/javascript" src="../js/axios.min.js"></script>
+	<script type="text/javascript" src="../js/element-ui.js"></script>
+	<link rel="stylesheet" href="./css/element-ui.css">
+</head>
+<body>
+<div id="app">
+	 <el-table
+      :data="students"
+      style="width: 100%">
+      <el-table-column
+        prop="name"
+        label="姓名"
+        width="180">
+      </el-table-column>
+      <el-table-column
+        prop="gender"
+        label="性别"
+        width="180">
+      </el-table-column>
+      <el-table-column
+        prop="password"
+        label="密码">
+      </el-table-column>
+       <el-table-column label="操作">
+      <template scope="scope">
+        <el-button
+          size="small"
+          @click="handleEdit(scope.$index, scope.row)">编辑</el-button>
+        <el-button
+          size="small"
+          type="danger"
+          @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+      </template>
+    </el-table-column>
+    </el-table>	
+</div>
+
+
+	<script type="text/javascript">
+		axios.defaults.baseURL='http://127.0.0.1:3000/';
+		var store=new Vuex.Store({
+			state:{
+				title:'学生管理模块',
+				students:[]
+			},
+			mutations:{
+				alterStudent(state,data){
+					state.students=data;
+				}
+			},
+			actions:{
+				findAllStudent(context){
+					axios.get('/student/findAll')
+					.then((result)=>{
+						var data=result.data;
+						context.commit('alterStudent',data)
+					})
+				},
+				batchDeleteStudent(context,ids){
+					// console.log(ids);
+					return new Promise(function(resolve,reject){
+						axios.post('/student/batchDelete',{
+							ids:ids
+						})
+						.then((result)=>{
+							context.dispatch('findAllStudent');
+							resolve();
+						})
+						.catch((erro)=>{
+							reject(erro)
+						})
+					})
+				}
+			}
+
+		})
+		new Vue({
+			el:'#app',
+			store:store,
+			created(){
+				this.findAllStudent();
+			},
+			methods:{
+				...Vuex.mapActions(['findAllStudent','batchDeleteStudent']),
+				handleDelete(index,row){
+					this.batchDeleteStudent([row.id])
+					.then(()=>{
+						alert("删除成功");
+					})
+					.catch(()=>{
+						alert("失败");
+					})
+				}
+
+			}
+			,
+			computed:{
+				...Vuex.mapState(['title','students'])
+			}
+		})
+	</script>
+</body>
+</html>
